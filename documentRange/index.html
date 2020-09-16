@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <style>
+
+        </style>
+    </head>
+    <body>
+        
+        <!-- <p>1111111</p>
+        <p>2222222</p> -->
+        <div id='root'>
+            <p id='event_test'>1111111</p>
+            <p>2222222</p>
+        </div>
+
+        <button onclick="TEST()">TEST</button>
+
+        <div id="root1"></div>
+        <script>
+            const root = document.getElementById('root')
+            const root1 = document.getElementById('root1')
+            const range = document.createRange()
+            function TEST() {
+                
+                // const text = root.firstChild
+                
+                // range.setStart(root, 0)
+                // range.setEnd(root, root.childNodes.length)
+
+                // range.setStartBefore(root)
+                // range.setEndAfter(root)
+
+                range.setStartAfter(root.firstChild)
+                range.setEndBefore(root.lastChild)
+
+                const f = range.cloneContents()
+                console.log(f)
+        
+                range.deleteContents()
+
+                root1.append(f)
+            }
+
+            function event_test() {
+                console.log('event_test')
+            }
+
+            const event_test_dom = document.getElementById('event_test')
+
+            event_test_dom.addEventListener('click', event_test)
+        </script>
+    </body>
+</html>

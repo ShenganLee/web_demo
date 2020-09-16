@@ -18,6 +18,6 @@ var data = [{
 }]
 function aaa() {
     const tree = new Tree({ dataSource: data })
-    console.log(tree)
+    console.dir(tree.flatten())
 }
 aaa()

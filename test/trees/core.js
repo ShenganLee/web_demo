@@ -17,8 +17,9 @@ const SOURCETREE = Symbol('sourceTree')
 const SOURCEMAP = Symbol('sourceMap')
 
 const DATA = Symbol('data')
-const CHILDREN = Symbol('children')
 const TREENODES = Symbol('treeNodes')
+const CHILDREN = Symbol('children')
+const GETCHILDREN = Symbol('get children')
 const FLATTEN = Symbol('flatten')
 
 function createTreeNodes(children, childNodes) {
@@ -33,6 +34,14 @@ class TreeNode {
     }
 
     [INIT]() {
+        this[CHILDREN] = this[GETCHILDREN]()
+
+        if (this[CHILDREN] instanceof Array) {
+            this[TREENODES] = createTreeNodes(this[CHILDREN], this[CHILDNODES])
+        }
+    }
+
+    [GETCHILDREN]() {
         let children
         if (typeof this[CHILDNODES] === 'string') {
             children = this[DATA][this[CHILDNODES]]
@@ -40,9 +49,7 @@ class TreeNode {
             children = this[CHILDNODES](this[DATA])
         }
 
-        if (children instanceof Array) {
-            this[TREENODES] = createTreeNodes(children, this[CHILDNODES])
-        }
+        return children
     }
 
     [FLATTEN](map, parent) {
@@ -52,25 +59,31 @@ class TreeNode {
             this[TREENODES].forEach(child => child[FLATTEN](map, this))
         }
     }
+
+    map(fn) {
+
+    }
 }
 
 class Tree {
-    constructor(option) {
+    static defOpt = { dataSource: [], childNodes: 'children' }
 
-        const defOpt = { dataSource: [], childNodes: 'children' }
-        const opt = { ...defOpt, ...option }
+    constructor(option) {
+        
+        const opt = { ...Tree.defOpt, ...option }
 
         this[DATASOURCE] = opt.dataSource
         this[CHILDNODES] = opt.childNodes
 
         this[SOURCETREE] = []
-        this[SOURCEMAP] = new WeakMap()
+        this[SOURCEMAP] = new Map()
 
         this[INIT]()
 
     }
 
     [INIT]() {
+        this[SOURCEMAP].clear()
         this[SOURCETREE].length = 0
         this[SOURCETREE] = createTreeNodes(this[DATASOURCE], this[CHILDNODES])
 
@@ -79,6 +92,50 @@ class Tree {
             tree[FLATTEN](sourceMap, tree)
         })
     }
+
+    setDataSource(dataSource) {
+        this[DATASOURCE] = dataSource
+        this[INIT]()
+    }
+
+    setChildNodes(childNodes) {
+        this[CHILDNODES] = childNodes
+        this[INIT]()
+    }
+
+    setOption(option) {
+        const opt = { ...Tree.defOpt, ...option }
+
+        this[DATASOURCE] = opt.dataSource
+        this[CHILDNODES] = opt.childNodes
+
+        this[INIT]()
+    }
+
+    flatten() {
+        const set = new Set()
+        const map = this[SOURCEMAP]
+        const result = []
+
+        for (let [key, value] of map) {
+            set.add(key)
+            set.add(value)
+        }
+
+        for (let value of set) {
+            result.push(value[DATA])
+        }
+
+        return result
+    }
+
+    // map(fn, key) {
+    //     this[SOURCETREE].map(tree => {
+    //         const data = tree[data]
+    //         const children = tree[CHILDREN]
+    //     })
+    // }
+
 }
 
 module.exports = Tree

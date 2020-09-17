@@ -22,6 +22,17 @@ const CHILDREN = Symbol('children')
 const GETCHILDREN = Symbol('get children')
 const FLATTEN = Symbol('flatten')
 
+const FUNCS = {
+    0: 'map',
+    1: 'filter',
+    2: 'foreach',
+    3: 'flatten',
+    map: 0,
+    filter: 1,
+    foreach: 2,
+    flatten: 3,
+}
+
 function createTreeNodes(children, childNodes) {
     return children.map(child => new TreeNode({ data: child, childNodes }))
 }
@@ -99,6 +110,7 @@ class Tree {
 
         const sourceMap = this[SOURCEMAP]
         this[SOURCETREE].forEach(tree => {
+            sourceMap.add(tree, null)
             tree[FLATTEN](sourceMap, tree)
         })
     }
@@ -122,35 +134,41 @@ class Tree {
         this[INIT]()
     }
 
-    flatten() {
-        const set = new Set()
-        const map = this[SOURCEMAP]
+    [FLATTEN](type, fn) {
         const result = []
+        const array = Array.from(this[SOURCEMAP].keys())
 
-        for (let [key, value] of map) {
-            set.add(key)
-            set.add(value)
-        }
-
-        for (let value of set) {
-            result.push(value[DATA])
+        for (let tree of array) {
+            const data = tree[DATA]
+            switch(FUNCS[type]) {
+                case 'map':
+                    result.push(fn(data))
+                    break
+                case 'filter':
+                    fn(data) && result.push(data)
+                    break
+                case 'foreach':
+                    fn(data)
+                    break
+                case 'flatten':
+                default:
+                    result.push(data)
+            }
         }
 
         return result
     }
 
     map(fn) {
-        const trees = this.flatten()
-        return trees.map(fn)
+        return this[FLATTEN](FUNCS.map, fn)
     }
 
     filter(fn) {
-        const trees = this.flatten()
-        return trees.map(fn)
+        return this[FLATTEN](FUNCS.filter, fn,)
     }
 
-    forEach(fn) {
-        this.flatten().forEach(fn)
+    flatten() {
+        return this[FLATTEN](FUNCS.flatten)
     }
 
     treeMap(fn, key) { // key: number | string
@@ -158,13 +176,47 @@ class Tree {
 
         const type = typeof childNodes
         if (type !== 'string' || type !== 'number') {
-            throw new Error('key is undefind')
+            throw new Error('key type')
         }
 
-        return this[SOURCETREE].map(tree => tree.map(fn, childNodes))
+        return this[SOURCETREE].map(tree => tree.treeMap(fn, childNodes))
+    }
+
+    treeFilter(fn, key) {
+        const map = this[SOURCEMAP]
+        const array = Array.from(map.keys())
+
+        let values = array.filter(tree => fn(tree[DATA]))
+
+        if (!values.length) return []
+
+        let maxLen = 0
+
+        const treeList = children.map(child => {
+            const trees = [child]
+            let parent = map.get(child)
+            let _child = parent
+            while(parent) {
+                parent = map.get(_child)
+                if (parent) trees.unshift(parent)
+                _child = parent
+            }
+
+            trees.length > maxLen && (maxLen = trees.length)
+            return trees
+        })
+
+
+        let i = 0
+        while(maxLen - i) {
+            // const 
+        }
+        
     }
 
 }
+
+// Trees Tree TreeNode
 
 module.exports = Tree
 

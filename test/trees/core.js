@@ -60,8 +60,18 @@ class TreeNode {
         }
     }
 
-    map(fn) {
+    treeMap(fn, key) {
+        const tree = fn(this[DATA])
 
+        if (!tree) return
+
+        let childNodes
+
+        if (this[TREENODES]) {
+            childNodes = this[TREENODES].map(tree => tree.map(fn, key))
+        }
+
+        return { ...tree, [key]: childNodes }
     }
 }
 
@@ -129,12 +139,30 @@ class Tree {
         return result
     }
 
-    // map(fn, key) {
-    //     this[SOURCETREE].map(tree => {
-    //         const data = tree[data]
-    //         const children = tree[CHILDREN]
-    //     })
-    // }
+    map(fn) {
+        const trees = this.flatten()
+        return trees.map(fn)
+    }
+
+    filter(fn) {
+        const trees = this.flatten()
+        return trees.map(fn)
+    }
+
+    forEach(fn) {
+        this.flatten().forEach(fn)
+    }
+
+    treeMap(fn, key) { // key: number | string
+        const childNodes = key || this[CHILDNODES]
+
+        const type = typeof childNodes
+        if (type !== 'string' || type !== 'number') {
+            throw new Error('key is undefind')
+        }
+
+        return this[SOURCETREE].map(tree => tree.map(fn, childNodes))
+    }
 
 }
 

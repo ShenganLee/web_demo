@@ -1,19 +1,3 @@
-
-const INIT = Symbol('init')
-
-
-const OPTION = Symbol('option')
-const DATASOURCE = Symbol('dataSource')
-const CHILDNODES = Symbol('childNodes')
-const SOURCETREE = Symbol('sourceTree')
-const SOURCEMAP = Symbol('sourceMap')
-
-const DATA = Symbol('data')
-const TREENODES = Symbol('treeNodes')
-const CHILDREN = Symbol('children')
-const GETCHILDREN = Symbol('get children')
-const FLATTEN = Symbol('flatten')
-
 const FUNCS = {
     0: 'map',
     1: 'filter',
@@ -25,30 +9,91 @@ const FUNCS = {
     flatten: 3,
 }
 
-class Tree {
-    constructor(option) {
-        const default_option = {
-            trees: [],
-            children: 'children',
-        }
+const INIT = Symbol('init')
 
-        this[OPTION] = Object.assign(
-            {},
-            default_option,
-            option
-        )
+const DEEP = Symbol('deep')
+const LIST = Symbol('list')
+const INDEX = Symbol('index')
+const CHILDREN = Symbol('children')
+const TREENODES = Symbol('treeNodes')
+const DATASOURCE = Symbol('dataSource')
+const GETCHILDREN = Symbol('get children')
+
+const REGISTERFNMAP = new Symbol('register Fn Map')
+const MAPFN = Symbol('map fn')
+
+class Tree {
+    
+    constructor(trees = [], children = 'children') {
+        this[REGISTERFNMAP] = new Map()
+
+        this[DATASOURCE] = trees
+        this[GETCHILDREN] = typeof children === 'string' ? (data) => data[children] : children
+
+        this[INIT] = false
+    }
+
+    get [CHILDREN] () {
+        if (!this[INIT]) {
+            this[TREENODES] = this[DATASOURCE]
+                .map((node, index, list) => new TreeNode({ node, index, list, children: this[GETCHILDREN] }))
+
+            this[INIT] = true
+        }
+        return this[TREENODES]
+    }
+
+    registerFn(key, fn) {
+        this[REGISTERFNMAP].set(key, fn)
     }
 
     map(fn) {
-        const trees = this[OPTION].trees.map(node => {
-            
-        })
+        const tree = new Tree(this[DATASOURCE], this[GETCHILDREN])
+        tree.registerFn('map', fn)
+        return tree
+    }
+
+    getData(children = 'children') {
+        
     }
 }
 
 class TreeNode {
-    constructor({ node, children }) {
-        this.ch
+    constructor({node, index, list, deep = 0, children}) {
+        this[DEEP] = deep
+        this[LIST] = list
+        this[INDEX] = index
+        this[DATASOURCE] = node
+        this[GETCHILDREN] = children
 
+        this[INIT] =  false
+    }
+
+    get [CHILDREN] () {
+        if (!this[INIT]) {
+            const children = this[GETCHILDREN](
+                this[DATASOURCE],
+                this[INDEX],
+                this[DEEP],
+                this[LIST]
+            )
+
+            if (children) {
+                this[TREENODES] = children
+                    .map((node, index, list) => new TreeNode({
+                        node,
+                        index,
+                        deep: this[DEEP] + 1,
+                        list,
+                        children: this[GETCHILDREN]
+                    }))
+            }
+            this[INIT] = true
+        }
+        return this[TREENODES]
+    }
+
+    getData(children) {
+        // return 
     }
 }
